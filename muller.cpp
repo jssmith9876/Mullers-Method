@@ -28,6 +28,7 @@
 #include <iomanip>      // So we can set the precision of the numbers we output
 #define NUM_VALS 3
 #define DEBUG 0 
+#define USEARR 0
 
 using std::deque;  // So we don't have to write std::vector every time
 
@@ -48,7 +49,7 @@ double f(double x) {
  *  The table will be stored in `results` and will be generated 
  *  from the list of x values.
  */
-double divided_difference_rec(deque<double> x_vals, deque< deque<double> >& results, int start_pos, int end_pos) {
+double divided_difference_rec(deque<double> x_vals, deque< deque<double> > results, int start_pos, int end_pos) {
     // Base case, we only have one argument (f[x] = f(x))
     if (start_pos == end_pos) {
         // Store the y value into the first column of the table and return it
@@ -65,7 +66,6 @@ double divided_difference_rec(deque<double> x_vals, deque< deque<double> >& resu
     // Store the result in the table and return
     results[end_pos][end_pos - start_pos] = calc;
     return calc;
-    
 }
 
 /*
@@ -97,12 +97,13 @@ deque<double> quad_formula(double a, double b, double c) {
 
 // Helper functions to decide the next x value 
 double _abs(double x) { return (x >= 0) ? x : -x; }
-double dist(double x, double y) { return abs(x - y); }
+double _dist(double x, double y) { return _abs(x - y); }
 
 /*
  *  Function to print a 2d vector in a nice format.
  *  Mainly to be used for debugging divided difference table
  */
+#if !USEARR
 void prettyPrint(deque< deque<double> > vals) {
     for (deque<double>& row : vals) {
         for (double& val : row) {
@@ -111,6 +112,18 @@ void prettyPrint(deque< deque<double> > vals) {
         std::cout << std::endl;
     }
 }
+#endif
+
+#if USEARR
+void prettyPrint(double** vals) {
+    for (int i = 0; i < NUM_VALS; i++) {
+        for (int j = 0; j < NUM_VALS; j++) {
+            std::cout << vals[i][j] << "\t";
+        }
+        std::cout << std::endl;
+    }
+}
+#endif
 
 
 int main() {
@@ -127,13 +140,31 @@ int main() {
     // Reverse the values 
     std::reverse(x_vals.begin(), x_vals.end());
 
+#if !USEARR
     deque< deque<double> > div_diff_table;
+#endif
+
+#if USEARR
+    double** div_diff_table = new double*[NUM_VALS];
+    for (int i = 0; i < NUM_VALS; i++) {
+        div_diff_table[i] = new double[NUM_VALS];
+    }
+#endif
 
     // Set the output precision 
     std::cout << std::fixed << std::setprecision(16);
 
     for (int iter = 0; iter < 10; iter++) {
 
+#if USEARR
+    for (int i = 0; i < NUM_VALS; i++) {
+        for (int j = 0; j < NUM_VALS; j++) {
+            div_diff_table[i][j] = NaN;
+        }
+    }
+#endif
+
+#if !USEARR
         // Reset the divided difference table
         if (div_diff_table.empty()) {
             // Fill the table with NaN
@@ -150,7 +181,7 @@ int main() {
                 for (int j = 0; j < NUM_VALS; j++) 
                     div_diff_table[i][j] = NaN;
         }
-
+#endif
 
 
         /*
@@ -195,7 +226,7 @@ int main() {
 #endif
 
         // Calculate the new x value from the roots
-        double new_x = (dist(x_2, roots[0]) < dist(x_2, roots[1])) ? roots[0] : roots[1];
+        double new_x = (_dist(x_2, roots[0]) < _dist(x_2, roots[1])) ? roots[0] : roots[1];
         
         // Add the new value to our list 
         x_vals.push_front(new_x);
@@ -207,6 +238,12 @@ int main() {
         std::cout << "\n====================================\n\n";
 #endif
     }
+
+#if USEARR
+    for (int i = 0; i < NUM_VALS; i++) 
+        delete[] div_diff_table[i];
+    delete[] div_diff_table;
+#endif
     
     return 0;
 }
