@@ -20,7 +20,7 @@
  */
 
 #include <iostream>     // For input/output
-#include <vector>       // Easier to manage arrays
+#include <deque>        // Easier to manage arrays
 #include <limits>       // To generate NaN for the divided difference table
 #include <algorithm>    // For reversing our vector
 #include <stdlib.h>     // So we can use EXIT_FAILURE is something goes wrong
@@ -29,7 +29,7 @@
 #define NUM_VALS 3
 #define DEBUG 0 
 
-using std::vector;  // So we don't have to write std::vector every time
+using std::deque;  // So we don't have to write std::vector every time
 
 
 // Global NaN value to use in the empty values of our table
@@ -48,7 +48,7 @@ double f(double x) {
  *  The table will be stored in `results` and will be generated 
  *  from the list of x values.
  */
-double divided_difference_rec(vector<double> x_vals, vector< vector<double> >& results, int start_pos, int end_pos) {
+double divided_difference_rec(deque<double> x_vals, deque< deque<double> >& results, int start_pos, int end_pos) {
     // Base case, we only have one argument (f[x] = f(x))
     if (start_pos == end_pos) {
         // Store the y value into the first column of the table and return it
@@ -74,7 +74,7 @@ double divided_difference_rec(vector<double> x_vals, vector< vector<double> >& r
  *      p(x) = ax^2+bx+c
  *  Returns the roots in a vector. 
  */
-vector<double> quad_formula(double a, double b, double c) {
+deque<double> quad_formula(double a, double b, double c) {
     // Define the variables we need to use
     double r_1, r_2;
     double b_sqrd = b * b;
@@ -91,7 +91,7 @@ vector<double> quad_formula(double a, double b, double c) {
     r_2 = c / (a * r_1);
     
     // Return the roots as a vector
-    vector<double> res {r_1, r_2};
+    deque<double> res {r_1, r_2};
     return res;
 }
 
@@ -103,8 +103,8 @@ double dist(double x, double y) { return abs(x - y); }
  *  Function to print a 2d vector in a nice format.
  *  Mainly to be used for debugging divided difference table
  */
-void prettyPrint(vector< vector<double> > vals) {
-    for (vector<double>& row : vals) {
+void prettyPrint(deque< deque<double> > vals) {
+    for (deque<double>& row : vals) {
         for (double& val : row) {
             std::cout << val << "\t";
         }
@@ -114,7 +114,7 @@ void prettyPrint(vector< vector<double> > vals) {
 
 
 int main() {
-    vector<double> x_vals;
+    deque<double> x_vals;
     double tmp;
 
     // Get the x values from the user
@@ -127,10 +127,10 @@ int main() {
     // Reverse the values 
     std::reverse(x_vals.begin(), x_vals.end());
 
-    vector< vector<double> > div_diff_table;
+    deque< deque<double> > div_diff_table;
 
     // Set the output precision 
-    std::cout << std::fixed << std::setprecision(8);
+    std::cout << std::fixed << std::setprecision(16);
 
     for (int iter = 0; iter < 10; iter++) {
 
@@ -138,7 +138,7 @@ int main() {
         if (div_diff_table.empty()) {
             // Fill the table with NaN
             for (int i = 0; i < NUM_VALS; i++) {
-                vector<double> tmp;
+                deque<double> tmp;
                 for (int j = 0; j < NUM_VALS; j++) {
                     tmp.push_back(NaN);
                 }
@@ -166,7 +166,7 @@ int main() {
 #endif
 
         // Get the coefficients from the divided difference table
-        vector<double> coeffs;
+        deque<double> coeffs;
         for (int i = 0; i < NUM_VALS; i++) {
             coeffs.push_back(div_diff_table[i][i]);
         }
@@ -184,7 +184,7 @@ int main() {
             c = (c_1 * x_1 * x_2 - c_2 * x_2 + c_3);
 
         // Calculate the roots of the interpolating polynomial
-        vector<double> roots = quad_formula(a, b, c);
+        deque<double> roots = quad_formula(a, b, c);
 
 #if DEBUG
         std::cout << "Roots of interpolating polynomial" << std::endl;
@@ -197,12 +197,10 @@ int main() {
         // Calculate the new x value from the roots
         double new_x = (dist(x_2, roots[0]) < dist(x_2, roots[1])) ? roots[0] : roots[1];
         
-        //std::cout << "New x value is: " << new_x << std::endl;
-
-        // Make the new vector with the new value
-        x_vals.insert(x_vals.begin(), new_x);
+        // Add the new value to our list 
+        x_vals.push_front(new_x);
         x_vals.pop_back();
-
+        
         std::cout << "x_" << iter + 1 << " = " << new_x << std::endl;
 
 #if DEBUG
