@@ -27,7 +27,7 @@
 #include <math.h>       // For the sqrt function 
 #include <iomanip>      // So we can set the precision of the numbers we output
 #define NUM_VALS 3
-#define DEBUG 0 
+#define DEBUG 0
 
 using std::deque;  // So we don't have to write std::vector every time
 
@@ -40,7 +40,8 @@ const double NaN = std::numeric_limits<double>::quiet_NaN();
  */
 double f(double x) {
     // x^3 + x^2 - 10x - 10
-    return (x * x * x) + (x * x) - 10 * x - 10;
+    // return (x * x * x) + (x * x) - 10 * x - 10;
+    return sin(x);
 }
 
 /*
@@ -84,7 +85,7 @@ void quad_formula(double a, double b, double c, double* result) {
 
     // If we get a negative discriminant, we have complex roots (BAD NEWS)
     if (discriminant < 0) {
-        r_1 = NaN; r_2 = NaN;
+        r_1 = NaN; r_2 = NaN;   // Set the roots to NaN, our program will check for this and abort properly
     } else {
         // Calculate the roots 
         r_1 = (-b - sgn_b * sqrt(discriminant)) / (2 * a);
@@ -127,6 +128,7 @@ int main() {
     // Reverse the values 
     std::reverse(x_vals.begin(), x_vals.end());
 
+    // Initialize the memory for our divided difference table
     double** div_diff_table = new double*[NUM_VALS];
     for (int i = 0; i < NUM_VALS; i++) {
         div_diff_table[i] = new double[NUM_VALS];
@@ -135,6 +137,7 @@ int main() {
     // Set the output precision 
     std::cout << std::fixed << std::setprecision(16);
 
+    // We only perform 10 iterations of the program (for now)
     for (int iter = 0; iter < 10; iter++) {
 
         // Fill the divided difference table with 
@@ -179,7 +182,7 @@ int main() {
         quad_formula(a, b, c, roots);
 
         // Check if our interpolating polynomial has complex roots
-        if (isnan(roots[0]) && isnan(roots[1])) {
+        if (isnan(roots[0]) || isnan(roots[1])) {
             // If this is our first pass through, then our function had no real roots to start with
             if (iter == 0) {
                 std::cout << "Function has no real roots!" << std::endl;
