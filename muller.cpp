@@ -28,7 +28,6 @@
 #include <iomanip>      // So we can set the precision of the numbers we output
 #define NUM_VALS 3
 #define DEBUG 0 
-#define USEARR 0
 
 using std::deque;  // So we don't have to write std::vector every time
 
@@ -49,7 +48,7 @@ double f(double x) {
  *  The table will be stored in `results` and will be generated 
  *  from the list of x values.
  */
-double divided_difference_rec(deque<double> x_vals, deque< deque<double> > results, int start_pos, int end_pos) {
+double divided_difference_rec(deque<double> x_vals, double** results, int start_pos, int end_pos) {
     // Base case, we only have one argument (f[x] = f(x))
     if (start_pos == end_pos) {
         // Store the y value into the first column of the table and return it
@@ -74,7 +73,7 @@ double divided_difference_rec(deque<double> x_vals, deque< deque<double> > resul
  *      p(x) = ax^2+bx+c
  *  Returns the roots in a vector. 
  */
-deque<double> quad_formula(double a, double b, double c) {
+void quad_formula(double a, double b, double c, double* result) {
     // Define the variables we need to use
     double r_1, r_2;
     double b_sqrd = b * b;
@@ -84,15 +83,16 @@ deque<double> quad_formula(double a, double b, double c) {
     int sgn_b = (b > 0) ? 1 : -1;
 
     // If we get a negative discriminant, we have complex roots (BAD NEWS)
-    if (discriminant < 0) exit(EXIT_FAILURE);
-
-    // Calculate the roots 
-    r_1 = (-b - sgn_b * sqrt(discriminant)) / (2 * a);
-    r_2 = c / (a * r_1);
+    if (discriminant < 0) {
+        r_1 = NaN; r_2 = NaN;
+    } else {
+        // Calculate the roots 
+        r_1 = (-b - sgn_b * sqrt(discriminant)) / (2 * a);
+        r_2 = c / (a * r_1);
+    }
     
-    // Return the roots as a vector
-    deque<double> res {r_1, r_2};
-    return res;
+    // Return the roots
+    result[0] = r_1; result[1] = r_2;
 }
 
 // Helper functions to decide the next x value 
@@ -103,18 +103,6 @@ double _dist(double x, double y) { return _abs(x - y); }
  *  Function to print a 2d vector in a nice format.
  *  Mainly to be used for debugging divided difference table
  */
-#if !USEARR
-void prettyPrint(deque< deque<double> > vals) {
-    for (deque<double>& row : vals) {
-        for (double& val : row) {
-            std::cout << val << "\t";
-        }
-        std::cout << std::endl;
-    }
-}
-#endif
-
-#if USEARR
 void prettyPrint(double** vals) {
     for (int i = 0; i < NUM_VALS; i++) {
         for (int j = 0; j < NUM_VALS; j++) {
@@ -123,7 +111,6 @@ void prettyPrint(double** vals) {
         std::cout << std::endl;
     }
 }
-#endif
 
 
 int main() {
@@ -140,54 +127,27 @@ int main() {
     // Reverse the values 
     std::reverse(x_vals.begin(), x_vals.end());
 
-#if !USEARR
-    deque< deque<double> > div_diff_table;
-#endif
-
-#if USEARR
     double** div_diff_table = new double*[NUM_VALS];
     for (int i = 0; i < NUM_VALS; i++) {
         div_diff_table[i] = new double[NUM_VALS];
     }
-#endif
 
     // Set the output precision 
     std::cout << std::fixed << std::setprecision(16);
 
     for (int iter = 0; iter < 10; iter++) {
 
-#if USEARR
-    for (int i = 0; i < NUM_VALS; i++) {
-        for (int j = 0; j < NUM_VALS; j++) {
-            div_diff_table[i][j] = NaN;
-        }
-    }
-#endif
-
-#if !USEARR
-        // Reset the divided difference table
-        if (div_diff_table.empty()) {
-            // Fill the table with NaN
-            for (int i = 0; i < NUM_VALS; i++) {
-                deque<double> tmp;
-                for (int j = 0; j < NUM_VALS; j++) {
-                    tmp.push_back(NaN);
-                }
-                div_diff_table.push_back(tmp);
+        // Fill the divided difference table with 
+        for (int i = 0; i < NUM_VALS; i++) {
+            for (int j = 0; j < NUM_VALS; j++) {
+                div_diff_table[i][j] = NaN;
             }
-        } else {
-            // Set the table full of NaN
-            for (int i = 0; i < NUM_VALS; i++) 
-                for (int j = 0; j < NUM_VALS; j++) 
-                    div_diff_table[i][j] = NaN;
         }
-#endif
-
 
         /*
         *  We want to generate the interpolating polynomial from this data:
         *      p(x) = a(x-x_0)(x-x_1) + b(x-x_0) + c
-        *  We can calculate a, b, c using the divided difference (Newton Form)
+        *  We can calculate a, b, c using a divided difference table (Newton Form)
         */
         divided_difference_rec(x_vals, div_diff_table, 0, NUM_VALS - 1); // Calculate the divided difference table (stored in `div_diff_table`)
 
@@ -197,9 +157,9 @@ int main() {
 #endif
 
         // Get the coefficients from the divided difference table
-        deque<double> coeffs;
+        double coeffs[NUM_VALS];
         for (int i = 0; i < NUM_VALS; i++) {
-            coeffs.push_back(div_diff_table[i][i]);
+            coeffs[i] = div_diff_table[i][i];
         }
 
         // Grab the values needed to calculate the polynomial's roots
@@ -215,7 +175,19 @@ int main() {
             c = (c_1 * x_1 * x_2 - c_2 * x_2 + c_3);
 
         // Calculate the roots of the interpolating polynomial
-        deque<double> roots = quad_formula(a, b, c);
+        double roots[] = {NaN, NaN};
+        quad_formula(a, b, c, roots);
+
+        // Check if our interpolating polynomial has complex roots
+        if (isnan(roots[0]) && isnan(roots[1])) {
+            // If this is our first pass through, then our function had no real roots to start with
+            if (iter == 0) {
+                std::cout << "Function has no real roots!" << std::endl;
+            }
+            
+            // Exit the program
+            exit(EXIT_FAILURE);
+        }
 
 #if DEBUG
         std::cout << "Roots of interpolating polynomial" << std::endl;
@@ -239,11 +211,10 @@ int main() {
 #endif
     }
 
-#if USEARR
+    // Free the memory allocated for our table
     for (int i = 0; i < NUM_VALS; i++) 
         delete[] div_diff_table[i];
     delete[] div_diff_table;
-#endif
     
     return 0;
 }
