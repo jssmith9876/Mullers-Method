@@ -23,11 +23,10 @@
 #include <deque>        // Easier to manage arrays
 #include <limits>       // To generate NaN for the divided difference table
 #include <algorithm>    // For reversing our vector
-#include <stdlib.h>     // So we can use EXIT_FAILURE is something goes wrong
 #include <math.h>       // For the sqrt function 
 #include <iomanip>      // So we can set the precision of the numbers we output
 #define NUM_VALS 3
-#define DEBUG 0
+#define DEBUG 0 
 
 using std::deque;  // So we don't have to write std::vector every time
 
@@ -40,8 +39,8 @@ const double NaN = std::numeric_limits<double>::quiet_NaN();
  */
 double f(double x) {
     // x^3 + x^2 - 10x - 10
-    // return (x * x * x) + (x * x) - 10 * x - 10;
-    return sin(x);
+    return (x * x * x) + (x * x) - 10 * x - 10;
+    //return sin(x);
 }
 
 /*
@@ -137,8 +136,10 @@ int main() {
     // Set the output precision 
     std::cout << std::fixed << std::setprecision(16);
 
-    // We only perform 10 iterations of the program (for now)
-    for (int iter = 0; iter < 10; iter++) {
+    int iter = 0;
+
+    // Iterate until we hit a non-real root
+    while (true) {
 
         // Fill the divided difference table with 
         for (int i = 0; i < NUM_VALS; i++) {
@@ -186,10 +187,13 @@ int main() {
             // If this is our first pass through, then our function had no real roots to start with
             if (iter == 0) {
                 std::cout << "Function has no real roots!" << std::endl;
+            } else {
+                std::cout << "Root calculated in " << iter << " iterations" << std::endl;
             }
             
-            // Exit the program
-            exit(EXIT_FAILURE);
+
+            // Break out of the loop
+            break;
         }
 
 #if DEBUG
@@ -208,6 +212,23 @@ int main() {
         x_vals.pop_back();
         
         std::cout << "x_" << iter + 1 << " = " << new_x << std::endl;
+
+        // Increment our counter 
+        iter++;
+
+        // Check if we're not making any progress. If our approximations aren't getting any better, then break out of the loop
+        if (new_x - x_vals[1] == 0) {
+            std::cout << "Root calculated in " << iter << " iterations" << std::endl;
+            break;
+        }
+
+#if DEBUG
+        std::cout << "\nValues in our deque: ";
+        for (double& x_val : x_vals) {
+            std::cout << x_val << " ";
+        }
+        std::cout << std::endl;
+#endif
 
 #if DEBUG
         std::cout << "\n====================================\n\n";
