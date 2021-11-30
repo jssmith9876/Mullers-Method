@@ -22,13 +22,13 @@
 #include <iostream>     // For input/output
 #include <deque>        // Easier to manage arrays
 #include <limits>       // To generate NaN for the divided difference table
-#include <algorithm>    // For reversing our vector
+#include <algorithm>    // For reversing our deque 
 #include <math.h>       // For the sqrt function 
 #include <iomanip>      // So we can set the precision of the numbers we output
 #define NUM_VALS 3
 #define DEBUG 0 
 
-using std::deque;  // So we don't have to write std::vector every time
+using std::deque;  // So we don't have to write std::deque every time
 
 
 // Global NaN value to use in the empty values of our table
@@ -40,7 +40,6 @@ const double NaN = std::numeric_limits<double>::quiet_NaN();
 double f(double x) {
     // x^3 + x^2 - 10x - 10
     return (x * x * x) + (x * x) - 10 * x - 10;
-    //return sin(x);
 }
 
 /*
@@ -117,6 +116,10 @@ int main() {
     deque<double> x_vals;
     double tmp;
 
+    std::cout << "========== Muller's Method ==========" << std::endl;
+
+    std::cout << "Enter in three numbers near the root and \nthis will approximate the root using\n Muller's Method\n" << std::endl; 
+
     // Get the x values from the user
     for (int i = 0; i < NUM_VALS; i++) {
         std::cout << "Enter in value #" << (i+1) << ": ";
@@ -188,7 +191,7 @@ int main() {
             if (iter == 0) {
                 std::cout << "Function has no real roots!" << std::endl;
             } else {
-                std::cout << "Root calculated in " << iter << " iterations" << std::endl;
+                std::cout << "Root calculated in " << iter << " iteration(s)" << std::endl;
             }
             
 
@@ -218,7 +221,7 @@ int main() {
 
         // Check if we're not making any progress. If our approximations aren't getting any better, then break out of the loop
         if (new_x - x_vals[1] == 0) {
-            std::cout << "Root calculated in " << iter << " iterations" << std::endl;
+            std::cout << "Root calculated in " << iter << " iteration(s)" << std::endl;
             break;
         }
 
